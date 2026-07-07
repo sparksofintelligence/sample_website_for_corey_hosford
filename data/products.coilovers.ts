@@ -14,16 +14,16 @@ export const catalog: CatalogConfig = {
   heroImage: "/images/hero-coilovers.png",
   heroSublineLead: "One category. Mastered.",
   heroSupportText:
-    "Suspension specialists for drivers who want chassis-specific fitment, spring-rate guidance, and clear stock from people who live in coilovers.",
+    "S13, S14, Z, Miata, BMW, Honda, and 86/BRZ setups for street, stance, drift, and track. Rates, damping, and stock status stay clear.",
   catalogHeading: "Coilover Kits",
-  catalogIntro: "Twenty focused SKUs for street, drift, track, and support hardware.",
+  catalogIntro: "Street, stance-ready, drift, and track coilovers sorted by chassis. Pick the shell first, then choose how hard the car gets used.",
   primaryCta: "Shop all kits",
   secondaryCta: "Find my fitment",
   illustration: "coilover",
   useFilterLabel: "Use",
-  builtToOrderHeading: "Curated parts, clear build slots",
+  builtToOrderHeading: "Build slots without guessing",
   builtToOrderText:
-    "The catalog stays narrow on purpose. Common fitments stay ready to ship, while specialist setups are assembled when the order notes are confirmed.",
+    "Common chassis stay in stock when they can. Built-to-order kits show real lead times before checkout, not after the order lands.",
   productNoun: "kit",
   specialistHeading: "Suspension Is All We Do",
   specialistEyebrow: "Single-category depth",
@@ -41,6 +41,31 @@ export const catalog: CatalogConfig = {
       text: "Inventory stays concentrated on coilovers and support hardware, so availability and build slots stay clear instead of guessed.",
     },
   ],
+  chassisSelectorEyebrow: "Start with the shell",
+  chassisSelectorHeading: "Shop By Chassis",
+  chassisSelectorIntro:
+    "S-chassis, Z, Miata, BMW, Honda, and 86/BRZ fitments stay separated. No universal noise before the parts list.",
+  expertiseEyebrow: "Product proof",
+  expertiseHeading: "Why Buy From Us",
+  expertiseIntro:
+    "Authority should show in the kit, the service path, and the stock status.",
+  expertisePoints: [
+    {
+      title: "Chassis-specific, not universal",
+      text: "Fitment, spring rates, and valving are matched to each chassis. Not a generic cartridge dropped into a bracket.",
+    },
+    {
+      title: "Rebuildable, not disposable",
+      text: "Serviceable dampers and replaceable wear parts keep a kit alive past one season of street, stance, drift, or track abuse.",
+    },
+    {
+      title: "Honest stock and lead times",
+      text: "In-stock and built-to-order status stays visible, with lead times called out before checkout.",
+    },
+  ],
+  fitmentFinderHeading: "Find My Fitment",
+  fitmentFinderIntro:
+    "Tell us the chassis and how it gets used. The recommendation stays tied to real catalog parts and current availability.",
 };
 
 const coiloverDetails = (

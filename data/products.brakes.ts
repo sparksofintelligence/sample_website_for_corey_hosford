@@ -14,16 +14,16 @@ export const catalog: CatalogConfig = {
   heroImage: "/images/hero-brakes.png",
   heroSublineLead: "One category. Mastered.",
   heroSupportText:
-    "Brake specialists for drivers who want chassis-specific clearance, pad and rotor guidance, and clear stock from people who understand pedal feel.",
+    "S13, S14, Z, and GR86/BRZ brake setups for street, drift, and track. Clearance, bias, pad choice, and stock status stay clear.",
   catalogHeading: "Brake Kits",
-  catalogIntro: "Twelve focused SKUs for street, drift, track, and supporting hardware.",
+  catalogIntro: "Street refreshes, drift balance parts, and track brake kits sorted by chassis. Pick the car before the rotor size.",
   primaryCta: "Shop brake kits",
   secondaryCta: "Find my fitment",
   illustration: "brake",
   useFilterLabel: "Use",
-  builtToOrderHeading: "Curated braking, clear build slots",
+  builtToOrderHeading: "Build slots without guessing",
   builtToOrderText:
-    "Brake inventory stays focused around proven fitments. Common service parts stay ready, while larger assemblies are built when rotor size and wheel clearance are confirmed.",
+    "Common service parts stay ready when they can. Built-to-order brake kits show real lead times before checkout, not after the order lands.",
   productNoun: "brake part",
   specialistHeading: "Braking Is All We Do",
   specialistEyebrow: "Single-category depth",
@@ -41,6 +41,31 @@ export const catalog: CatalogConfig = {
       text: "Inventory stays concentrated on brake kits, pads, rotors, and lines, so availability and build slots stay clear instead of guessed.",
     },
   ],
+  chassisSelectorEyebrow: "Start with the shell",
+  chassisSelectorHeading: "Shop By Chassis",
+  chassisSelectorIntro:
+    "S-chassis, Z, and 86/BRZ brake fitments stay separated. No universal plumbing maze before the parts list.",
+  expertiseEyebrow: "Product proof",
+  expertiseHeading: "Why Buy From Us",
+  expertiseIntro:
+    "Authority should show in the kit, the service path, and the stock status.",
+  expertisePoints: [
+    {
+      title: "Chassis-specific, not universal",
+      text: "Rotor size, caliper clearance, bias, and line routing are matched to each chassis. Not a generic bracket trying to fit everything.",
+    },
+    {
+      title: "Serviceable, not disposable",
+      text: "Pads, rotors, lines, and service parts stay replaceable, so the system can live past one season of street, drift, or track use.",
+    },
+    {
+      title: "Honest stock and lead times",
+      text: "In-stock and built-to-order status stays visible, with lead times called out before checkout.",
+    },
+  ],
+  fitmentFinderHeading: "Find My Fitment",
+  fitmentFinderIntro:
+    "Tell us the chassis and how it gets used. The recommendation stays tied to real catalog parts and current availability.",
 };
 
 const brakeDetails = (

@@ -23,13 +23,22 @@ const money = new Intl.NumberFormat("en-US", {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NOTIFY_STORAGE_PREFIX = "freedom-performance-notify:";
+const GARAGE_STORAGE_KEY = "freedom-performance-garage-chassis";
 
 const notifyStorageKey = (sku: string) => `${NOTIFY_STORAGE_PREFIX}${sku}`;
 
 type FinderUse = "Street" | "Drift" | "Track" | "Not sure";
+type FinderChassisOption = {
+  key: string;
+  label: string;
+  make: string;
+  order: number;
+  showInFinder: boolean;
+};
 
 const FINDER_USES: FinderUse[] = ["Street", "Drift", "Track", "Not sure"];
 const FITMENT_STEP_LABELS = ["Your chassis", "How you drive", "Result"];
+const FINDER_MAKE_ORDER = ["Nissan", "Mazda", "BMW", "Honda", "Toyota/Subaru"];
 
 const seriesForUse = (use: FinderUse): ProductSeries => {
   if (use === "Drift") {
@@ -49,99 +58,99 @@ const preferredSeriesOrder = (use: FinderUse): ProductSeries[] => {
   return [preferred, ...base.filter((series) => series !== preferred)];
 };
 
-const chassisLabelForFitment = (fitment: string) => {
+const chassisOptionFromFitment = (fitment: string): FinderChassisOption | null => {
   const normalized = fitment.toLowerCase();
 
   if (normalized.includes("s13/s14")) {
-    return "S13/S14";
+    return { key: "Nissan S-chassis", label: "240SX (S13/S14)", make: "Nissan", order: 4, showInFinder: false };
   }
 
-  if (normalized.includes("s13")) {
-    return "S13";
+  if (normalized.includes("240sx") && normalized.includes("s13")) {
+    return { key: "Nissan 240SX S13", label: "240SX (S13)", make: "Nissan", order: 0, showInFinder: true };
   }
 
-  if (normalized.includes("s14")) {
-    return "S14";
+  if (normalized.includes("240sx") && normalized.includes("s14")) {
+    return { key: "Nissan 240SX S14", label: "240SX (S14)", make: "Nissan", order: 1, showInFinder: true };
   }
 
   if (normalized.includes("s-chassis") || normalized.includes("s chassis")) {
-    return "S13/S14";
+    return { key: "Nissan S-chassis", label: "240SX (S13/S14)", make: "Nissan", order: 4, showInFinder: false };
   }
 
   if (normalized.includes("350z") || normalized.includes("z33")) {
-    return "350Z";
+    return { key: "Nissan 350Z Z33", label: "350Z (Z33)", make: "Nissan", order: 2, showInFinder: true };
   }
 
   if (normalized.includes("370z") || normalized.includes("z34")) {
-    return "370Z";
+    return { key: "Nissan 370Z Z34", label: "370Z (Z34)", make: "Nissan", order: 3, showInFinder: true };
   }
 
   if (normalized.includes("gr86")) {
-    return "GR86/BRZ";
+    return { key: "Toyota/Subaru GR86 BRZ", label: "GR86 / BRZ", make: "Toyota/Subaru", order: 0, showInFinder: true };
   }
 
   if (normalized.includes("fr-s")) {
-    return "FR-S/BRZ";
+    return { key: "Toyota/Subaru FRS BRZ", label: "FR-S / BRZ", make: "Toyota/Subaru", order: 1, showInFinder: true };
   }
 
   if (normalized.includes("brz")) {
-    return "BRZ";
+    return { key: "Subaru BRZ", label: "BRZ", make: "Toyota/Subaru", order: 2, showInFinder: true };
   }
 
-  if (normalized.includes("miata")) {
-    return "Miata";
+  if (normalized.includes("miata") && normalized.includes("na/nb")) {
+    return { key: "Mazda Miata NA/NB", label: "Miata (NA/NB)", make: "Mazda", order: 0, showInFinder: true };
+  }
+
+  if (normalized.includes("miata") && normalized.includes("nd")) {
+    return { key: "Mazda Miata ND", label: "Miata (ND)", make: "Mazda", order: 1, showInFinder: true };
   }
 
   if (normalized.includes("e36")) {
-    return "E36";
+    return { key: "BMW 3 Series E36", label: "3 Series (E36)", make: "BMW", order: 0, showInFinder: true };
   }
 
   if (normalized.includes("e46")) {
-    return "E46";
+    return { key: "BMW 3 Series E46", label: "3 Series (E46)", make: "BMW", order: 1, showInFinder: true };
   }
 
   if (normalized.includes("civic")) {
-    return "Civic";
+    return { key: "Honda Civic EG/EK", label: "Civic (EG/EK)", make: "Honda", order: 0, showInFinder: true };
   }
 
   if (normalized.includes("s2000")) {
-    return "S2000";
+    return { key: "Honda S2000", label: "S2000", make: "Honda", order: 1, showInFinder: true };
   }
 
-  if (normalized.includes("universal")) {
-    return "Universal";
-  }
-
-  return fitment.split(/\s+(?:front|rear|and|kit|kits|refresh|competition|street|track|drift)/i)[0] || fitment;
+  return null;
 };
 
 const productMatchesFinderChassis = (product: Product, chassis: string) => {
-  const productChassis = chassisLabelForFitment(product.fitment);
+  const productChassis = chassisOptionFromFitment(product.fitment)?.key;
 
   if (productChassis === chassis) {
     return true;
   }
 
-  if (productChassis === "S13/S14" && (chassis === "S13" || chassis === "S14")) {
+  if (productChassis === "Nissan S-chassis" && (chassis === "Nissan 240SX S13" || chassis === "Nissan 240SX S14")) {
     return true;
   }
 
-  return chassis === "S13/S14" && (productChassis === "S13" || productChassis === "S14");
+  return chassis === "Nissan S-chassis" && (productChassis === "Nissan 240SX S13" || productChassis === "Nissan 240SX S14");
 };
 
-const whyThisKit = (product: Product, use: FinderUse, chassis: string, isExactMatch: boolean) => {
+const whyThisKit = (product: Product, use: FinderUse, chassisLabel: string, isExactMatch: boolean) => {
   const specs = product.specChips.slice(0, 2).join(" and ");
   const seriesName = product.series.replace(" Series", "").toLowerCase();
 
   if (use === "Not sure") {
-    return `Start here: ${specs} gives the ${chassis} a known street baseline before stepping sharper.`;
+    return `Start here: ${specs} gives the ${chassisLabel} a known street baseline before stepping sharper.`;
   }
 
   if (!isExactMatch) {
-    return `${specs} is the closest ${seriesName} option for the ${chassis} while a specialist confirms the ${use.toLowerCase()} setup.`;
+    return `${specs} is the closest ${seriesName} option for the ${chassisLabel} while a specialist confirms the ${use.toLowerCase()} setup.`;
   }
 
-  return `${specs} suit ${use.toLowerCase()} driving on the ${chassis}.`;
+  return `${specs} suit ${use.toLowerCase()} driving on the ${chassisLabel}.`;
 };
 
 type StorefrontProps = {
@@ -171,24 +180,48 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
   const [finderStep, setFinderStep] = useState(1);
   const [finderChassis, setFinderChassis] = useState<string | null>(null);
   const [finderUse, setFinderUse] = useState<FinderUse | null>(null);
-
-  const fitmentOptions = useMemo(
-    () => ["All chassis", ...Array.from(new Set(products.map((product) => product.fitment)))],
-    [products],
-  );
+  const [garageChassisKey, setGarageChassisKey] = useState<string | null>(null);
 
   const finderChassisOptions = useMemo(() => {
-    const labels = products
-      .filter((product) => product.series !== "Accessories")
-      .map((product) => chassisLabelForFitment(product.fitment))
-      .filter((label) => label !== "Universal");
+    const options = new Map<string, FinderChassisOption>();
 
-    return Array.from(new Set(labels));
+    products
+      .filter((product) => product.series !== "Accessories")
+      .forEach((product) => {
+        const option = chassisOptionFromFitment(product.fitment);
+
+        if (option?.showInFinder && !options.has(option.key)) {
+          options.set(option.key, option);
+        }
+      });
+
+    return Array.from(options.values()).sort(
+      (a, b) => FINDER_MAKE_ORDER.indexOf(a.make) - FINDER_MAKE_ORDER.indexOf(b.make) || a.order - b.order,
+    );
   }, [products]);
+
+  const finderChassisGroups = useMemo(
+    () =>
+      FINDER_MAKE_ORDER.map((make) => ({
+        make,
+        options: finderChassisOptions.filter((option) => option.make === make),
+      })).filter((group) => group.options.length > 0),
+    [finderChassisOptions],
+  );
+
+  const selectedFinderChassis = useMemo(
+    () => finderChassisOptions.find((option) => option.key === finderChassis) ?? null,
+    [finderChassis, finderChassisOptions],
+  );
+
+  const selectedGarageChassis = useMemo(
+    () => finderChassisOptions.find((option) => option.key === garageChassisKey) ?? null,
+    [finderChassisOptions, garageChassisKey],
+  );
 
   const filteredProducts = useMemo(() => {
     const narrowed = products.filter((product) => {
-      const chassisMatch = chassis === "All chassis" || product.fitment === chassis;
+      const chassisMatch = chassis === "All chassis" || productMatchesFinderChassis(product, chassis);
       const seriesMatch = series === "All" || product.series === series;
 
       return chassisMatch && seriesMatch;
@@ -216,6 +249,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     }
 
     const preferredSeries = seriesForUse(finderUse);
+    const chassisLabel = selectedFinderChassis?.label ?? finderChassis;
     const chassisProducts = products.filter((product) => productMatchesFinderChassis(product, finderChassis));
     const exactProducts = chassisProducts.filter((product) => product.series === preferredSeries);
     const exactMatch = exactProducts.length > 0;
@@ -239,10 +273,10 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       exactMatch,
       recommendations: fallbackSource.slice(0, 3).map((product) => ({
         product,
-        why: whyThisKit(product, finderUse, finderChassis, exactMatch),
+        why: whyThisKit(product, finderUse, chassisLabel, exactMatch),
       })),
     };
-  }, [finderChassis, finderUse, products]);
+  }, [finderChassis, finderUse, products, selectedFinderChassis]);
 
   const cartLines = useMemo(() => Object.values(cart), [cart]);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
@@ -254,7 +288,6 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     brand.heroSupportText ??
     "Focused house-brand parts for drivers who want fitment checked, stock status clear, and support that knows the chassis.";
   const specialistHeading = catalog.specialistHeading ?? brand.specialistHeading ?? "Why This Store Works";
-  const specialistEyebrow = catalog.specialistEyebrow ?? brand.specialistEyebrow ?? "Specialist model";
 
   useEffect(() => {
     setModalQty(1);
@@ -271,6 +304,26 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
 
     setNotifiedSkus(storedSubmissions);
   }, [products]);
+
+  useEffect(() => {
+    const storedChassis = window.localStorage.getItem(GARAGE_STORAGE_KEY);
+    const storedChassisIsAvailable = Boolean(
+      storedChassis && finderChassisOptions.some((option) => option.key === storedChassis),
+    );
+
+    if (storedChassis && storedChassisIsAvailable) {
+      setGarageChassisKey(storedChassis);
+      setChassis(storedChassis);
+      return;
+    }
+
+    setGarageChassisKey(null);
+    setChassis((current) =>
+      current !== "All chassis" && !finderChassisOptions.some((option) => option.key === current)
+        ? "All chassis"
+        : current,
+    );
+  }, [finderChassisOptions]);
 
   useEffect(() => {
     if (!toast) {
@@ -402,6 +455,35 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     submitted: Boolean(notifiedSkus[product.sku]),
   });
 
+  const selectGarageChassis = (chassisKey: string) => {
+    setGarageChassisKey(chassisKey);
+    setChassis(chassisKey);
+    window.localStorage.setItem(GARAGE_STORAGE_KEY, chassisKey);
+  };
+
+  const clearGarageChassis = () => {
+    setGarageChassisKey(null);
+    setChassis("All chassis");
+    window.localStorage.removeItem(GARAGE_STORAGE_KEY);
+  };
+
+  const scrollToCatalog = () => {
+    document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToChassisSelector = () => {
+    document.getElementById("shop-by-chassis")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const shopChassis = (option: FinderChassisOption) => {
+    selectGarageChassis(option.key);
+    setSeries("All");
+    setSort("featured");
+    setActiveLink("Kits");
+    setMobileOpen(false);
+    window.requestAnimationFrame(scrollToCatalog);
+  };
+
   const handleNavClick = (label: string, href: string) => {
     setActiveLink(label);
     setMobileOpen(false);
@@ -431,7 +513,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       </div>
 
       <header className="sticky top-0 z-40 border-b border-line bg-asphalt/95 backdrop-blur">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-8">
+        <nav className="mx-auto flex min-h-[92px] max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <a
             href="#hero"
             className="shrink-0"
@@ -444,7 +526,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
             <BrandMark
               compact
               logoImage={brand.logoImage}
-              className={brand.logoImage ? "-my-3 h-[112px] w-[112px] sm:h-[120px] sm:w-[120px]" : "h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]"}
+              className={brand.logoImage ? "h-[68px] w-[68px]" : "h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]"}
             />
           </a>
 
@@ -501,6 +583,30 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
           </div>
         </nav>
 
+        {selectedGarageChassis && (
+          <div className="border-t border-line bg-asphalt/95 px-4 py-2 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
+              <span className="rounded-full border border-ignition bg-ignition px-3 py-1 text-xs font-black uppercase text-white">
+                Your garage: {selectedGarageChassis.label}
+              </span>
+              <button
+                type="button"
+                onClick={scrollToChassisSelector}
+                className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
+              >
+                Change
+              </button>
+              <button
+                type="button"
+                onClick={clearGarageChassis}
+                className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-steel transition hover:border-ignition hover:text-white"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+
         {mobileOpen && (
           <div className="border-t border-line bg-asphalt px-4 py-3 md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col gap-2">
@@ -531,17 +637,18 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       >
         {heroImage ? (
           <>
-            <div className="absolute -inset-y-20 -right-28 w-[124%] sm:-right-40 sm:w-[112%] lg:-right-52 lg:w-[98%] xl:-right-64 xl:w-[90%]">
+            <div className="hero-art-fade absolute right-6 top-1/2 aspect-[16/9] w-[82%] -translate-y-1/2 sm:right-10 sm:w-[72%] lg:right-14 lg:w-[58%] xl:right-[max(4rem,calc((100vw-1280px)/2+2rem))] xl:w-[52%]">
+              <div className="absolute inset-0 bg-asphalt" />
               <Image
                 src={heroImage}
                 alt=""
                 fill
                 priority
-                sizes="(min-width: 1280px) 90vw, (min-width: 1024px) 98vw, (min-width: 640px) 112vw, 124vw"
+                sizes="(min-width: 1280px) 52vw, (min-width: 1024px) 58vw, (min-width: 640px) 72vw, 82vw"
                 className="object-contain object-right"
               />
             </div>
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#0E0E0E_0%,rgba(14,14,14,0.99)_34%,rgba(14,14,14,0.78)_56%,rgba(14,14,14,0.14)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#0E0E0E_0%,rgba(14,14,14,0.99)_34%,rgba(14,14,14,0.78)_58%,rgba(14,14,14,0.08)_100%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(14,14,14,0.42)_0%,rgba(14,14,14,0)_44%,rgba(14,14,14,0.28)_100%)]" />
           </>
         ) : (
@@ -618,6 +725,69 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         </div>
       </section>
 
+      <section id="shop-by-chassis" className="scroll-mt-32 border-b border-line bg-asphalt px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
+            <div>
+              <SectionHeading title={catalog.chassisSelectorHeading} eyebrow={catalog.chassisSelectorEyebrow} accentColor={brand.accentColor} />
+              <p className="mt-5 max-w-xl text-base leading-7 text-steel">{catalog.chassisSelectorIntro}</p>
+            </div>
+
+            <div className="space-y-7">
+              {finderChassisGroups.map((group) => (
+                <div key={group.make}>
+                  <p className="mb-3 text-xs font-black uppercase tracking-normal text-ignition">{group.make}</p>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {group.options.map((option) => {
+                      const partCount = products.filter((product) => productMatchesFinderChassis(product, option.key)).length;
+                      const isSelected = chassis === option.key;
+
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => shopChassis(option)}
+                          className={`min-h-28 rounded-[10px] border p-4 text-left transition ${
+                            isSelected
+                              ? "border-ignition bg-ignition text-white shadow-glow"
+                              : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
+                          }`}
+                        >
+                          <span className="block text-xl font-black italic leading-tight">{option.label}</span>
+                          <span className={`mt-3 block text-xs font-black uppercase ${isSelected ? "text-white" : "text-steel"}`}>
+                            {partCount} {partCount === 1 ? catalog.productNoun : `${catalog.productNoun}s`}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-line bg-panel-soft px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
+            <div>
+              <SectionHeading title={catalog.expertiseHeading} eyebrow={catalog.expertiseEyebrow} accentColor={brand.accentColor} />
+              <p className="mt-5 max-w-xl text-base leading-7 text-steel">{catalog.expertiseIntro}</p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              {catalog.expertisePoints.map((point) => (
+                <article key={point.title} className="rounded-[14px] bg-white p-6 text-asphalt shadow-card">
+                  <h3 className="text-xl font-black uppercase italic leading-tight">{point.title}</h3>
+                  <p className="mt-4 text-sm font-bold leading-6 text-neutral-700">{point.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="catalog" className="relative scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div id="drift" className="absolute -top-24" />
         <div id="accessories" className="absolute -top-24" />
@@ -632,20 +802,32 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
 
           <div
             id="fitment-filter"
-            className="sticky top-[72px] z-30 mt-8 rounded-[14px] border border-line bg-panel/95 p-3 shadow-card backdrop-blur"
+            className="sticky top-[92px] z-30 mt-8 rounded-[14px] border border-line bg-panel/95 p-3 shadow-card backdrop-blur"
           >
             <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_1fr_auto] md:items-end">
               <label className="block">
                 <span className="mb-2 block text-xs font-black uppercase text-steel">Chassis</span>
                 <select
                   value={chassis}
-                  onChange={(event) => setChassis(event.target.value)}
+                  onChange={(event) => {
+                    if (event.target.value === "All chassis") {
+                      clearGarageChassis();
+                      return;
+                    }
+
+                    selectGarageChassis(event.target.value);
+                  }}
                   className="h-12 w-full rounded-md border border-line bg-asphalt px-3 text-sm font-bold text-white"
                 >
-                  {fitmentOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
+                  <option value="All chassis">All chassis</option>
+                  {finderChassisGroups.map((group) => (
+                    <optgroup key={group.make} label={group.make}>
+                      {group.options.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </label>
@@ -681,7 +863,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
               <button
                 type="button"
                 onClick={() => {
-                  setChassis("All chassis");
+                  clearGarageChassis();
                   setSeries("All");
                   setSort("featured");
                 }}
@@ -722,9 +904,9 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
             <div>
-              <SectionHeading title="Find My Fitment" eyebrow={specialistHeading} accentColor={brand.accentColor} />
+              <SectionHeading title={catalog.fitmentFinderHeading} eyebrow={specialistHeading} accentColor={brand.accentColor} />
               <p className="mt-5 max-w-xl text-base leading-7 text-steel">
-                {specialistEyebrow}. Chassis-specific guidance meets real catalog availability, so the recommendation stays grounded in parts that can be ordered.
+                {catalog.fitmentFinderIntro}
               </p>
 
               <div className="mt-8 grid grid-cols-3 gap-2">
@@ -769,24 +951,32 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
 
               {finderStep === 1 && (
                 <div className="pt-6">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {finderChassisOptions.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => {
-                          setFinderChassis(option);
-                          setFinderUse(null);
-                          setFinderStep(2);
-                        }}
-                        className={`rounded-[10px] border px-4 py-4 text-left text-lg font-black uppercase italic transition ${
-                          finderChassis === option
-                            ? "border-ignition bg-ignition text-white"
-                            : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
-                        }`}
-                      >
-                        {option}
-                      </button>
+                  <div className="space-y-6">
+                    {finderChassisGroups.map((group) => (
+                      <div key={group.make}>
+                        <p className="mb-2 text-xs font-black uppercase tracking-normal text-steel">{group.make}</p>
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          {group.options.map((option) => (
+                            <button
+                              key={option.key}
+                              type="button"
+                              onClick={() => {
+                                selectGarageChassis(option.key);
+                                setFinderChassis(option.key);
+                                setFinderUse(null);
+                                setFinderStep(2);
+                              }}
+                              className={`rounded-[10px] border px-4 py-4 text-left text-lg font-black italic transition ${
+                                finderChassis === option.key
+                                  ? "border-ignition bg-ignition text-white"
+                                  : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -795,7 +985,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
               {finderStep === 2 && finderChassis && (
                 <div className="pt-6">
                   <p className="text-sm font-bold leading-6 text-steel">
-                    Chassis selected: <span className="font-black uppercase text-white">{finderChassis}</span>
+                    Chassis selected: <span className="font-black text-white">{selectedFinderChassis?.label ?? finderChassis}</span>
                   </p>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {FINDER_USES.map((use) => (
@@ -824,7 +1014,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                       <p className="text-sm font-bold uppercase text-steel">
-                        {finderChassis} / {finderUse}
+                        {selectedFinderChassis?.label ?? finderChassis} / {finderUse}
                       </p>
                       <h4 className="mt-1 text-3xl font-black uppercase italic text-white">
                         {finderResult.exactMatch || finderUse === "Not sure" ? "Recommended kit" : "Closest options"}
@@ -841,7 +1031,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
 
                   {!finderResult.exactMatch && finderUse !== "Not sure" && (
                     <p className="mt-4 rounded-[10px] border border-line bg-panel px-4 py-3 text-sm font-bold leading-6 text-steel">
-                      No exact {finderUse.toLowerCase()} match is listed for the {finderChassis}. These are the closest catalog options.
+                      No exact {finderUse.toLowerCase()} match is listed for the {selectedFinderChassis?.label ?? finderChassis}. These are the closest catalog options.
                     </p>
                   )}
 
@@ -937,7 +1127,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
           <div>
             <BrandMark
               logoImage={brand.logoImage}
-              className={brand.logoImage ? "h-40 w-40" : "h-[72px] w-[190px]"}
+              className={brand.logoImage ? "h-[150px] w-[150px]" : "h-[72px] w-[190px]"}
             />
             <p className="mt-5 max-w-md text-sm leading-7 text-steel">
               Demo storefront. Product data illustrative. A {brand.parentBrand} brand.

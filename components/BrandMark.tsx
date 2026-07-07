@@ -11,13 +11,13 @@ export function BrandMark({ className = "", compact = false, logoImage }: BrandM
 
   if (logoImage) {
     return (
-      <span className={`relative block shrink-0 overflow-visible ${className}`}>
+      <span className={`relative block shrink-0 overflow-hidden ${className}`}>
         <Image
           src={logoImage}
           alt="Freedom Performance"
           fill
-          sizes={compact ? "120px" : "160px"}
-          className="scale-[1.18] object-contain"
+          sizes={compact ? "68px" : "150px"}
+          className="object-contain"
         />
       </span>
     );

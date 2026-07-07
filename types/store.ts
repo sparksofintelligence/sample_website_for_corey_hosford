@@ -13,6 +13,11 @@ export type DetailSpec = {
   value: string;
 };
 
+export type CopyPoint = {
+  title: string;
+  text: string;
+};
+
 export type Product = {
   sku: string;
   name: string;
@@ -81,10 +86,16 @@ export type CatalogConfig = {
   productNoun: string;
   specialistHeading?: string;
   specialistEyebrow?: string;
-  specialistPoints?: {
-    title: string;
-    text: string;
-  }[];
+  specialistPoints?: CopyPoint[];
+  chassisSelectorEyebrow: string;
+  chassisSelectorHeading: string;
+  chassisSelectorIntro: string;
+  expertiseEyebrow: string;
+  expertiseHeading: string;
+  expertiseIntro: string;
+  expertisePoints: CopyPoint[];
+  fitmentFinderHeading: string;
+  fitmentFinderIntro: string;
 };
 
 export type CartLine = {
