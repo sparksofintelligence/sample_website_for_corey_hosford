@@ -6,3 +6,6 @@ dist/
 .env*.local
 *.log
 package-lock.json
+.vercel
+.env*
+package-lock.json
