@@ -12,6 +12,9 @@ export const catalog: CatalogConfig = {
   heroEyebrow: "Freedom Performance",
   heroTitle: "Purpose-built braking.",
   heroImage: "/images/hero-brakes.png",
+  heroSublineLead: "One category. Mastered.",
+  heroSupportText:
+    "Brake specialists for drivers who want chassis-specific clearance, pad and rotor guidance, and clear stock from people who understand pedal feel.",
   catalogHeading: "Brake Kits",
   catalogIntro: "Twelve focused SKUs for street, drift, track, and supporting hardware.",
   primaryCta: "Shop brake kits",
@@ -22,6 +25,22 @@ export const catalog: CatalogConfig = {
   builtToOrderText:
     "Brake inventory stays focused around proven fitments. Common service parts stay ready, while larger assemblies are built when rotor size and wheel clearance are confirmed.",
   productNoun: "brake part",
+  specialistHeading: "Braking Is All We Do",
+  specialistEyebrow: "Single-category depth",
+  specialistPoints: [
+    {
+      title: "Chassis clearance before parts ship",
+      text: "Rotor size, caliper profile, wheel barrel room, and line routing are checked against the chassis before the order moves.",
+    },
+    {
+      title: "Pad and rotor guidance from drivers",
+      text: "Street bite, drift modulation, and track heat capacity get matched by people who understand how the car is used.",
+    },
+    {
+      title: "Deep stock in one category",
+      text: "Inventory stays concentrated on brake kits, pads, rotors, and lines, so availability and build slots stay clear instead of guessed.",
+    },
+  ],
 };
 
 const brakeDetails = (
@@ -68,7 +87,7 @@ const productCatalog: Product[] = [
     fitment: "Nissan 350Z Z33 2003-2008",
     specChips: ["Slotted rotors", "Street pad", "Full axle"],
     price: 649,
-    stockStatus: "In Stock",
+    stockStatus: "Out of Stock",
     detailSpecs: brakeDetails("Front axle slotted", "Low dust street", "OEM-style rubber", "Rotors, pads, clips", "Factory wheel friendly"),
   },
   {
@@ -162,7 +181,7 @@ const productCatalog: Product[] = [
     fitment: "Nissan S-chassis and Z-chassis",
     specChips: ["Stainless", "DOT-style ends", "Full car"],
     price: 159,
-    stockStatus: "In Stock",
+    stockStatus: "Out of Stock",
     detailSpecs: brakeDetails("Not included", "Not included", "Braided stainless full car", "Four lines, clips, crush washers", "Factory routing"),
   },
 ];

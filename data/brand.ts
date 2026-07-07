@@ -5,6 +5,7 @@ export const brand: BrandConfig = {
   parentBrand: "Freedom Autoworks",
   tagline: "Purpose-built suspension.",
   subline: "The performance division of Freedom Autoworks.",
+  logoImage: "/images/logo.png",
   heroImage: "/images/hero-coilovers.png",
   accentColor: "#E8331C",
   categoryLabel: "Coilover Kits",

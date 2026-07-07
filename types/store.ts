@@ -4,7 +4,7 @@ export type ProductSeries =
   | "Track Series"
   | "Accessories";
 
-export type StockStatus = "In Stock" | "Built to Order";
+export type StockStatus = "In Stock" | "Built to Order" | "Out of Stock";
 
 export type IllustrationKind = "coilover" | "brake";
 
@@ -31,7 +31,12 @@ export type BrandConfig = {
   parentBrand: string;
   tagline: string;
   subline: string;
+  logoImage?: string;
   heroImage?: string;
+  heroSublineLead?: string;
+  heroSupportText?: string;
+  specialistHeading?: string;
+  specialistEyebrow?: string;
   accentColor: string;
   categoryLabel: string;
   announcement: string;
@@ -63,6 +68,8 @@ export type CatalogConfig = {
   heroEyebrow: string;
   heroTitle: string;
   heroImage?: string;
+  heroSublineLead?: string;
+  heroSupportText?: string;
   catalogHeading: string;
   catalogIntro: string;
   primaryCta: string;
@@ -72,6 +79,12 @@ export type CatalogConfig = {
   builtToOrderHeading: string;
   builtToOrderText: string;
   productNoun: string;
+  specialistHeading?: string;
+  specialistEyebrow?: string;
+  specialistPoints?: {
+    title: string;
+    text: string;
+  }[];
 };
 
 export type CartLine = {

@@ -21,6 +21,11 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NOTIFY_STORAGE_PREFIX = "freedom-performance-notify:";
+
+const notifyStorageKey = (sku: string) => `${NOTIFY_STORAGE_PREFIX}${sku}`;
+
 type StorefrontProps = {
   brand: BrandConfig;
   catalog: CatalogConfig;
@@ -41,6 +46,10 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
   const [faqOpen, setFaqOpen] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("Kits");
+  const [notifyForms, setNotifyForms] = useState<Record<string, boolean>>({});
+  const [notifyEmails, setNotifyEmails] = useState<Record<string, string>>({});
+  const [notifyErrors, setNotifyErrors] = useState<Record<string, string>>({});
+  const [notifiedSkus, setNotifiedSkus] = useState<Record<string, true>>({});
 
   const chassisOptions = useMemo(
     () => ["All chassis", ...Array.from(new Set(products.map((product) => product.fitment)))],
@@ -72,10 +81,30 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + line.product.price * line.quantity, 0);
   const heroImage = catalog.heroImage;
+  const heroSublineLead = catalog.heroSublineLead ?? brand.heroSublineLead;
+  const heroSupportText =
+    catalog.heroSupportText ??
+    brand.heroSupportText ??
+    "Focused house-brand parts for drivers who want fitment checked, stock status clear, and support that knows the chassis.";
+  const specialistHeading = catalog.specialistHeading ?? brand.specialistHeading ?? "Why This Store Works";
+  const specialistEyebrow = catalog.specialistEyebrow ?? brand.specialistEyebrow ?? "Specialist model";
+  const specialistPoints = catalog.specialistPoints ?? brand.specialistPoints;
 
   useEffect(() => {
     setModalQty(1);
   }, [selectedProduct]);
+
+  useEffect(() => {
+    const storedSubmissions: Record<string, true> = {};
+
+    products.forEach((product) => {
+      if (window.localStorage.getItem(notifyStorageKey(product.sku))) {
+        storedSubmissions[product.sku] = true;
+      }
+    });
+
+    setNotifiedSkus(storedSubmissions);
+  }, [products]);
 
   useEffect(() => {
     if (!toast) {
@@ -166,6 +195,47 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     });
   };
 
+  const openNotifyForm = (sku: string) => {
+    setNotifyForms((current) => ({ ...current, [sku]: true }));
+    setNotifyErrors((current) => ({ ...current, [sku]: "" }));
+  };
+
+  const updateNotifyEmail = (sku: string, email: string) => {
+    setNotifyEmails((current) => ({ ...current, [sku]: email }));
+    setNotifyErrors((current) => ({ ...current, [sku]: "" }));
+  };
+
+  const submitNotify = (product: Product) => {
+    const email = (notifyEmails[product.sku] ?? "").trim();
+
+    if (!EMAIL_PATTERN.test(email)) {
+      setNotifyForms((current) => ({ ...current, [product.sku]: true }));
+      setNotifyErrors((current) => ({ ...current, [product.sku]: "Enter a valid email address." }));
+      return;
+    }
+
+    const submission = {
+      sku: product.sku,
+      email,
+      timestamp: new Date().toISOString(),
+    };
+
+    window.localStorage.setItem(notifyStorageKey(product.sku), JSON.stringify(submission));
+    console.log(submission);
+
+    setNotifiedSkus((current) => ({ ...current, [product.sku]: true }));
+    setNotifyForms((current) => ({ ...current, [product.sku]: false }));
+    setNotifyErrors((current) => ({ ...current, [product.sku]: "" }));
+    setToast(`We'll email you when ${product.sku} is back.`);
+  };
+
+  const notifyStateFor = (product: Product) => ({
+    email: notifyEmails[product.sku] ?? "",
+    error: notifyErrors[product.sku] ?? "",
+    isOpen: Boolean(notifyForms[product.sku]),
+    submitted: Boolean(notifiedSkus[product.sku]),
+  });
+
   const handleNavClick = (label: string, href: string) => {
     setActiveLink(label);
     setMobileOpen(false);
@@ -195,7 +265,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       </div>
 
       <header className="sticky top-0 z-40 border-b border-line bg-asphalt/95 backdrop-blur">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
           <a
             href="#hero"
             className="shrink-0"
@@ -205,7 +275,11 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
               document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
             }}
           >
-            <BrandMark compact className="h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]" />
+            <BrandMark
+              compact
+              logoImage={brand.logoImage}
+              className={brand.logoImage ? "h-[72px] w-[72px] sm:h-20 sm:w-20" : "h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]"}
+            />
           </a>
 
           <div className="hidden items-center gap-1 md:flex">
@@ -289,22 +363,47 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         id="hero"
         className="relative isolate overflow-hidden border-b border-line bg-asphalt px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="absolute inset-0 blueprint-grid opacity-40" />
-        <CatalogIllustration
-          kind={catalog.illustration}
-          accentColor={brand.accentColor}
-          className="absolute -right-20 top-12 h-[520px] w-[520px] opacity-[0.13] sm:right-2 lg:right-20 lg:top-4 lg:h-[620px] lg:w-[620px]"
-        />
-        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
-          <div>
-            <p className="mb-5 text-xs font-black uppercase tracking-normal text-ignition">{catalog.heroEyebrow}</p>
-            <h1 className="motorsport-heading max-w-4xl text-[4rem] text-white sm:text-[6.6rem] lg:text-[8.5rem]">
+        {heroImage ? (
+          <>
+            <div className="absolute inset-y-10 right-0 w-[86%] sm:w-[76%] lg:w-[68%] xl:w-[62%]">
+              <Image
+                src={heroImage}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1280px) 62vw, (min-width: 1024px) 68vw, (min-width: 640px) 76vw, 86vw"
+                className="object-contain object-right"
+              />
+            </div>
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#0E0E0E_0%,rgba(14,14,14,0.98)_30%,rgba(14,14,14,0.72)_58%,rgba(14,14,14,0.08)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(14,14,14,0.42)_0%,rgba(14,14,14,0)_44%,rgba(14,14,14,0.28)_100%)]" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 blueprint-grid opacity-40" />
+            <CatalogIllustration
+              kind={catalog.illustration}
+              accentColor={brand.accentColor}
+              className="absolute -right-20 top-12 h-[520px] w-[520px] opacity-[0.13] sm:right-2 lg:right-20 lg:top-4 lg:h-[620px] lg:w-[620px]"
+            />
+          </>
+        )}
+        <div
+          className={`relative mx-auto max-w-7xl ${
+            heroImage ? "min-h-[620px] py-6 sm:min-h-[660px] lg:flex lg:items-center" : "grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center"
+          }`}
+        >
+          <div className={heroImage ? "max-w-4xl" : ""}>
+            <p className="mb-5 text-sm font-black uppercase tracking-normal text-ignition sm:text-base">{catalog.heroEyebrow}</p>
+            <h1 className="motorsport-heading max-w-5xl text-[3.7rem] text-white sm:text-[7.4rem] lg:text-[9.7rem]">
               {catalog.heroTitle}
             </h1>
             <BrushSlash className="mt-2 h-9 w-full max-w-xl" color={brand.accentColor} />
-            <p className="mt-7 max-w-2xl text-lg font-black uppercase text-white sm:text-xl">{brand.subline}</p>
+            <p className="mt-7 max-w-2xl text-xl font-black uppercase text-white sm:text-2xl">
+              {heroSublineLead ? `${heroSublineLead} ${brand.subline}` : brand.subline}
+            </p>
             <p className="mt-3 max-w-2xl text-base leading-7 text-steel">
-              Focused house-brand parts for drivers who want fitment checked, stock status clear, and support that knows the chassis.
+              {heroSupportText}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
@@ -324,18 +423,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
             </div>
           </div>
 
-          {heroImage ? (
-            <div className="relative mx-auto aspect-video w-full max-w-[620px] overflow-hidden rounded-[14px] border border-line bg-[#0E0E0E] shadow-card">
-              <Image
-                src={heroImage}
-                alt=""
-                fill
-                priority
-                sizes="(min-width: 1024px) 620px, calc(100vw - 2rem)"
-                className="object-cover"
-              />
-            </div>
-          ) : (
+          {!heroImage && (
             <div className="relative mx-auto flex aspect-[4/5] w-full max-w-[460px] items-center justify-center overflow-hidden rounded-[14px] border border-line bg-panel shadow-card">
               <div className="absolute inset-0 blueprint-grid opacity-50" />
               <CatalogIllustration
@@ -447,6 +535,10 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
                 accentColor={brand.accentColor}
                 onOpen={() => setSelectedProduct(product)}
                 onAdd={() => addToCart(product)}
+                notifyState={notifyStateFor(product)}
+                onNotifyOpen={() => openNotifyForm(product.sku)}
+                onNotifyEmailChange={(email) => updateNotifyEmail(product.sku, email)}
+                onNotifySubmit={() => submitNotify(product)}
               />
             ))}
           </div>
@@ -462,9 +554,9 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
 
       <section id="fitment" className="scroll-mt-28 border-y border-line bg-panel-soft px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <SectionHeading title="Why This Store Works" eyebrow="Specialist model" accentColor={brand.accentColor} />
+          <SectionHeading title={specialistHeading} eyebrow={specialistEyebrow} accentColor={brand.accentColor} />
           <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {brand.specialistPoints.map((point) => (
+            {specialistPoints.map((point) => (
               <article key={point.title} className="rounded-[14px] bg-white p-6 text-asphalt shadow-card">
                 <h3 className="text-xl font-black uppercase leading-tight">{point.title}</h3>
                 <p className="mt-4 text-sm leading-6 text-neutral-700">{point.text}</p>
@@ -522,7 +614,10 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       <footer className="border-t border-line bg-panel px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_0.8fr_1fr]">
           <div>
-            <BrandMark className="h-[72px] w-[190px]" />
+            <BrandMark
+              logoImage={brand.logoImage}
+              className={brand.logoImage ? "h-[120px] w-[120px]" : "h-[72px] w-[190px]"}
+            />
             <p className="mt-5 max-w-md text-sm leading-7 text-steel">
               Demo storefront. Product data illustrative. A {brand.parentBrand} brand.
             </p>
@@ -576,6 +671,10 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
             addToCart(selectedProduct, modalQty);
             setSelectedProduct(null);
           }}
+          notifyState={notifyStateFor(selectedProduct)}
+          onNotifyOpen={() => openNotifyForm(selectedProduct.sku)}
+          onNotifyEmailChange={(email) => updateNotifyEmail(selectedProduct.sku, email)}
+          onNotifySubmit={() => submitNotify(selectedProduct)}
         />
       )}
 
@@ -621,7 +720,81 @@ type ProductCardProps = {
   accentColor: string;
   onOpen: () => void;
   onAdd: () => void;
+  notifyState: NotifyState;
+  onNotifyOpen: () => void;
+  onNotifyEmailChange: (email: string) => void;
+  onNotifySubmit: () => void;
 };
+
+type NotifyState = {
+  email: string;
+  error: string;
+  isOpen: boolean;
+  submitted: boolean;
+};
+
+type NotifyPanelProps = {
+  state: NotifyState;
+  onOpen: () => void;
+  onEmailChange: (email: string) => void;
+  onSubmit: () => void;
+};
+
+function NotifyPanel({ state, onOpen, onEmailChange, onSubmit }: NotifyPanelProps) {
+  if (state.submitted) {
+    return (
+      <button
+        type="button"
+        disabled
+        className="h-12 w-full rounded-full bg-ignition px-4 text-sm font-black uppercase text-white opacity-70"
+      >
+        We'll email you
+      </button>
+    );
+  }
+
+  if (!state.isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        className="h-12 w-full rounded-full bg-ignition px-4 text-sm font-black uppercase text-white transition hover:bg-asphalt"
+      >
+        Email me when available
+      </button>
+    );
+  }
+
+  return (
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+      className="w-full space-y-2"
+    >
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          value={state.email}
+          onChange={(event) => onEmailChange(event.target.value)}
+          placeholder="Email address"
+          aria-label="Email address"
+          aria-invalid={Boolean(state.error)}
+          className="h-12 min-w-0 flex-1 rounded-full border border-neutral-300 px-4 text-sm font-bold text-asphalt outline-none transition focus:border-ignition"
+        />
+        <button
+          type="submit"
+          className="h-12 rounded-full bg-ignition px-5 text-sm font-black uppercase text-white transition hover:bg-asphalt"
+        >
+          Submit
+        </button>
+      </div>
+      {state.error && <p className="px-1 text-xs font-bold text-ignition">{state.error}</p>}
+    </form>
+  );
+}
 
 type ProductVisualProps = {
   product: Product;
@@ -633,20 +806,35 @@ type ProductVisualProps = {
 
 function ProductVisual({ product, catalog, accentColor, className, sizes }: ProductVisualProps) {
   if (product.image) {
+    const positioningClass = className.includes("absolute") ? "" : "relative";
+
     return (
-      <span className={`relative block ${className}`}>
+      <span className={`${positioningClass} z-0 block ${className}`}>
         <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-contain" />
       </span>
     );
   }
 
-  return <CatalogIllustration kind={catalog.illustration} accentColor={accentColor} className={className} />;
+  return <CatalogIllustration kind={catalog.illustration} accentColor={accentColor} className={`relative z-0 ${className}`} />;
 }
 
-function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCardProps) {
+function ProductCard({
+  product,
+  catalog,
+  accentColor,
+  onOpen,
+  onAdd,
+  notifyState,
+  onNotifyOpen,
+  onNotifyEmailChange,
+  onNotifySubmit,
+}: ProductCardProps) {
+  const isOutOfStock = product.stockStatus === "Out of Stock";
   const stockClass =
     product.stockStatus === "In Stock"
       ? "border-ignition bg-ignition text-white"
+      : isOutOfStock
+        ? "border-asphalt bg-asphalt text-white"
       : "border-neutral-300 bg-neutral-100 text-neutral-700";
 
   return (
@@ -661,12 +849,16 @@ function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCa
       }}
       className="group flex min-h-[560px] cursor-pointer flex-col rounded-[14px] bg-white p-4 text-asphalt shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-glow"
     >
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[10px] border border-neutral-200 bg-panel blueprint-grid">
-        <div className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 font-mono text-xs font-black text-asphalt">
+      <div
+        className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[10px] border border-neutral-200 ${
+          product.image ? "bg-white" : "bg-panel blueprint-grid"
+        }`}
+      >
+        <div className="absolute left-3 top-3 z-20 rounded-full bg-white px-3 py-1 font-mono text-xs font-black text-asphalt">
           {product.sku}
         </div>
         <div
-          className="absolute bottom-3 right-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white"
+          className="absolute bottom-3 right-3 z-20 rounded-full px-3 py-1 text-xs font-black uppercase text-white"
           style={{ backgroundColor: accentColor }}
         >
           {product.series.replace(" Series", "")}
@@ -675,7 +867,11 @@ function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCa
           product={product}
           catalog={catalog}
           accentColor={accentColor}
-          className="h-[82%] w-[82%] transition duration-200 group-hover:scale-[1.03]"
+          className={
+            product.image
+              ? "absolute inset-x-7 bottom-9 top-9 transition duration-200 group-hover:scale-[1.03]"
+              : "h-[82%] w-[82%] transition duration-200 group-hover:scale-[1.03]"
+          }
           sizes="(min-width: 1024px) 280px, (min-width: 640px) 42vw, 80vw"
         />
       </div>
@@ -702,16 +898,24 @@ function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCa
             </span>
             {product.leadTime && <span className="text-xs font-black uppercase text-neutral-500">{product.leadTime}</span>}
           </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onAdd();
-            }}
-            className="w-full rounded-full bg-ignition px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-asphalt"
-          >
-            Add
-          </button>
+          <div onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+            {isOutOfStock ? (
+              <NotifyPanel
+                state={notifyState}
+                onOpen={onNotifyOpen}
+                onEmailChange={onNotifyEmailChange}
+                onSubmit={onNotifySubmit}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="w-full rounded-full bg-ignition px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-asphalt"
+              >
+                Add
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </article>
@@ -726,6 +930,10 @@ type ProductModalProps = {
   setQuantity: (quantity: number) => void;
   onClose: () => void;
   onAdd: () => void;
+  notifyState: NotifyState;
+  onNotifyOpen: () => void;
+  onNotifyEmailChange: (email: string) => void;
+  onNotifySubmit: () => void;
 };
 
 function ProductModal({
@@ -736,7 +944,13 @@ function ProductModal({
   setQuantity,
   onClose,
   onAdd,
+  notifyState,
+  onNotifyOpen,
+  onNotifyEmailChange,
+  onNotifySubmit,
 }: ProductModalProps) {
+  const isOutOfStock = product.stockStatus === "Out of Stock";
+
   return (
     <div
       role="presentation"
@@ -754,7 +968,11 @@ function ProductModal({
         className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[14px] bg-white text-asphalt shadow-card sm:rounded-[14px]"
       >
         <div className="grid md:grid-cols-[0.9fr_1.1fr]">
-          <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden bg-panel blueprint-grid p-6">
+          <div
+            className={`relative flex min-h-[320px] items-center justify-center overflow-hidden p-6 ${
+              product.image ? "bg-white" : "bg-panel blueprint-grid"
+            }`}
+          >
             <button
               type="button"
               aria-label="Close product details"
@@ -817,34 +1035,45 @@ function ProductModal({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 items-center rounded-full border border-neutral-200">
+              {isOutOfStock ? (
+                <div className="w-full sm:w-[360px]">
+                  <NotifyPanel
+                    state={notifyState}
+                    onOpen={onNotifyOpen}
+                    onEmailChange={onNotifyEmailChange}
+                    onSubmit={onNotifySubmit}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 items-center rounded-full border border-neutral-200">
+                    <button
+                      type="button"
+                      aria-label="Decrease quantity"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="flex h-12 w-12 items-center justify-center text-asphalt"
+                    >
+                      <LineIcon icon="minus" className="h-5 w-5" accentColor={accentColor} />
+                    </button>
+                    <span className="min-w-8 text-center text-sm font-black">{quantity}</span>
+                    <button
+                      type="button"
+                      aria-label="Increase quantity"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="flex h-12 w-12 items-center justify-center text-asphalt"
+                    >
+                      <LineIcon icon="plus" className="h-5 w-5" accentColor={accentColor} />
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    aria-label="Decrease quantity"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="flex h-12 w-12 items-center justify-center text-asphalt"
+                    onClick={onAdd}
+                    className="h-12 rounded-full bg-ignition px-5 text-sm font-black uppercase text-white transition hover:bg-asphalt"
                   >
-                    <LineIcon icon="minus" className="h-5 w-5" accentColor={accentColor} />
-                  </button>
-                  <span className="min-w-8 text-center text-sm font-black">{quantity}</span>
-                  <button
-                    type="button"
-                    aria-label="Increase quantity"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="flex h-12 w-12 items-center justify-center text-asphalt"
-                  >
-                    <LineIcon icon="plus" className="h-5 w-5" accentColor={accentColor} />
+                    Add to cart
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={onAdd}
-                  className="h-12 rounded-full bg-ignition px-5 text-sm font-black uppercase text-white transition hover:bg-asphalt"
-                >
-                  Add to cart
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -907,7 +1136,11 @@ function CartDrawer({ lines, catalog, subtotal, accentColor, onClose, onUpdateQu
               {lines.map((line) => (
                 <div key={line.product.sku} className="rounded-[14px] border border-line bg-asphalt p-4">
                   <div className="flex gap-4">
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[10px] border border-line bg-panel-soft blueprint-grid">
+                    <div
+                      className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-[10px] border border-line ${
+                        line.product.image ? "bg-white" : "bg-panel-soft blueprint-grid"
+                      }`}
+                    >
                       <ProductVisual
                         product={line.product}
                         catalog={catalog}

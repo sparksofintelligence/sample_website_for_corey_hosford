@@ -12,6 +12,9 @@ export const catalog: CatalogConfig = {
   heroEyebrow: "Freedom Performance",
   heroTitle: "Purpose-built suspension.",
   heroImage: "/images/hero-coilovers.png",
+  heroSublineLead: "One category. Mastered.",
+  heroSupportText:
+    "Suspension specialists for drivers who want chassis-specific fitment, spring-rate guidance, and clear stock from people who live in coilovers.",
   catalogHeading: "Coilover Kits",
   catalogIntro: "Twenty focused SKUs for street, drift, track, and support hardware.",
   primaryCta: "Shop all kits",
@@ -22,6 +25,22 @@ export const catalog: CatalogConfig = {
   builtToOrderText:
     "The catalog stays narrow on purpose. Common fitments stay ready to ship, while specialist setups are assembled when the order notes are confirmed.",
   productNoun: "kit",
+  specialistHeading: "Suspension Is All We Do",
+  specialistEyebrow: "Single-category depth",
+  specialistPoints: [
+    {
+      title: "Chassis notes, not generic fitment charts",
+      text: "Ride height, top mounts, wheel clearance, and install details are checked against the chassis before the order moves.",
+    },
+    {
+      title: "Spring-rate guidance from people who drive",
+      text: "Street comfort, drift response, and track grip get translated into rates and valving by people who know how these cars behave.",
+    },
+    {
+      title: "Deep stock in one category",
+      text: "Inventory stays concentrated on coilovers and support hardware, so availability and build slots stay clear instead of guessed.",
+    },
+  ],
 };
 
 const coiloverDetails = (
@@ -114,7 +133,7 @@ const productCatalog: Product[] = [
     fitment: "Mazda Miata NA/NB 1990-2005",
     specChips: ["8K/6K", "Short body", "Roadster tuned"],
     price: 949,
-    stockStatus: "In Stock",
+    stockStatus: "Out of Stock",
     detailSpecs: coiloverDetails("8K front, 6K rear", "24-way", "-1.0 to -2.4 in", "Twin-tube steel", "Top hats, collars, spanner set"),
   },
   {
@@ -196,7 +215,7 @@ const productCatalog: Product[] = [
     fitment: "Nissan S-chassis rear pair",
     specChips: ["Long stroke", "8K rear", "Pair only"],
     price: 1099,
-    stockStatus: "In Stock",
+    stockStatus: "Out of Stock",
     detailSpecs: coiloverDetails("8K rear", "32-way drift valve", "-1.2 to -3.0 in", "Monotube steel", "Rear dampers, springs, collars"),
   },
   {
@@ -206,8 +225,7 @@ const productCatalog: Product[] = [
     fitment: "Universal S-chassis competition kit",
     specChips: ["2-way adjustable", "12K/10K", "Remote reservoirs"],
     price: 2150,
-    stockStatus: "Built to Order",
-    leadTime: "3-5 weeks",
+    stockStatus: "Out of Stock",
     detailSpecs: coiloverDetails("12K front, 10K rear", "Independent compression and rebound", "-1.3 to -3.2 in", "Monotube alloy", "Reservoir brackets, plates, spanner set"),
   },
   {
@@ -248,7 +266,7 @@ const productCatalog: Product[] = [
     fitment: "Freedom Performance coilover kits",
     specChips: ["Spanner set", "Seals", "Service parts"],
     price: 89,
-    stockStatus: "In Stock",
+    stockStatus: "Out of Stock",
     detailSpecs: coiloverDetails("Not included", "Service restores adjuster feel", "Not applicable", "Seal and collar service", "Seal pack, collars, spanner set"),
   },
 ];

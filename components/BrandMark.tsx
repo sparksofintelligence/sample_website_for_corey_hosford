@@ -1,10 +1,27 @@
+import Image from "next/image";
+
 type BrandMarkProps = {
   className?: string;
   compact?: boolean;
+  logoImage?: string;
 };
 
-export function BrandMark({ className = "", compact = false }: BrandMarkProps) {
+export function BrandMark({ className = "", compact = false, logoImage }: BrandMarkProps) {
   const height = compact ? 52 : 72;
+
+  if (logoImage) {
+    return (
+      <span className={`relative block shrink-0 overflow-hidden ${className}`}>
+        <Image
+          src={logoImage}
+          alt="Freedom Performance"
+          fill
+          sizes={compact ? "80px" : "120px"}
+          className="object-contain"
+        />
+      </span>
+    );
+  }
 
   return (
     <svg
