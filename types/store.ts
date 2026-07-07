@@ -19,6 +19,7 @@ export type Product = {
   series: ProductSeries;
   fitment: string;
   specChips: string[];
+  image?: string;
   price: number;
   stockStatus: StockStatus;
   leadTime?: string;
@@ -30,6 +31,7 @@ export type BrandConfig = {
   parentBrand: string;
   tagline: string;
   subline: string;
+  heroImage?: string;
   accentColor: string;
   categoryLabel: string;
   announcement: string;
@@ -60,6 +62,7 @@ export type CatalogConfig = {
   }[];
   heroEyebrow: string;
   heroTitle: string;
+  heroImage?: string;
   catalogHeading: string;
   catalogIntro: string;
   primaryCta: string;

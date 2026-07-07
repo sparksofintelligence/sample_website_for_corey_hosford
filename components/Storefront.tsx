@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { BrandMark } from "@/components/BrandMark";
 import { BrushSlash } from "@/components/BrushSlash";
@@ -70,6 +71,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
   const cartLines = useMemo(() => Object.values(cart), [cart]);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + line.product.price * line.quantity, 0);
+  const heroImage = catalog.heroImage;
 
   useEffect(() => {
     setModalQty(1);
@@ -322,14 +324,27 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
             </div>
           </div>
 
-          <div className="relative mx-auto flex aspect-[4/5] w-full max-w-[460px] items-center justify-center overflow-hidden rounded-[14px] border border-line bg-panel shadow-card">
-            <div className="absolute inset-0 blueprint-grid opacity-50" />
-            <CatalogIllustration
-              kind={catalog.illustration}
-              accentColor={brand.accentColor}
-              className="relative h-[88%] w-[88%]"
-            />
-          </div>
+          {heroImage ? (
+            <div className="relative mx-auto aspect-video w-full max-w-[620px] overflow-hidden rounded-[14px] border border-line bg-[#0E0E0E] shadow-card">
+              <Image
+                src={heroImage}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1024px) 620px, calc(100vw - 2rem)"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="relative mx-auto flex aspect-[4/5] w-full max-w-[460px] items-center justify-center overflow-hidden rounded-[14px] border border-line bg-panel shadow-card">
+              <div className="absolute inset-0 blueprint-grid opacity-50" />
+              <CatalogIllustration
+                kind={catalog.illustration}
+                accentColor={brand.accentColor}
+                className="relative h-[88%] w-[88%]"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -608,6 +623,26 @@ type ProductCardProps = {
   onAdd: () => void;
 };
 
+type ProductVisualProps = {
+  product: Product;
+  catalog: CatalogConfig;
+  accentColor: string;
+  className: string;
+  sizes: string;
+};
+
+function ProductVisual({ product, catalog, accentColor, className, sizes }: ProductVisualProps) {
+  if (product.image) {
+    return (
+      <span className={`relative block ${className}`}>
+        <Image src={product.image} alt={product.name} fill sizes={sizes} className="object-contain" />
+      </span>
+    );
+  }
+
+  return <CatalogIllustration kind={catalog.illustration} accentColor={accentColor} className={className} />;
+}
+
 function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCardProps) {
   const stockClass =
     product.stockStatus === "In Stock"
@@ -636,10 +671,12 @@ function ProductCard({ product, catalog, accentColor, onOpen, onAdd }: ProductCa
         >
           {product.series.replace(" Series", "")}
         </div>
-        <CatalogIllustration
-          kind={catalog.illustration}
+        <ProductVisual
+          product={product}
+          catalog={catalog}
           accentColor={accentColor}
           className="h-[82%] w-[82%] transition duration-200 group-hover:scale-[1.03]"
+          sizes="(min-width: 1024px) 280px, (min-width: 640px) 42vw, 80vw"
         />
       </div>
 
@@ -726,7 +763,13 @@ function ProductModal({
             >
               <LineIcon icon="close" className="h-5 w-5" />
             </button>
-            <CatalogIllustration kind={catalog.illustration} accentColor={accentColor} className="h-[360px] w-[360px]" />
+            <ProductVisual
+              product={product}
+              catalog={catalog}
+              accentColor={accentColor}
+              className="h-[360px] w-[360px]"
+              sizes="(min-width: 768px) 360px, 80vw"
+            />
           </div>
 
           <div className="p-5 sm:p-8">
@@ -865,7 +908,13 @@ function CartDrawer({ lines, catalog, subtotal, accentColor, onClose, onUpdateQu
                 <div key={line.product.sku} className="rounded-[14px] border border-line bg-asphalt p-4">
                   <div className="flex gap-4">
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[10px] border border-line bg-panel-soft blueprint-grid">
-                      <CatalogIllustration kind={catalog.illustration} accentColor={accentColor} className="h-16 w-16" />
+                      <ProductVisual
+                        product={line.product}
+                        catalog={catalog}
+                        accentColor={accentColor}
+                        className="h-16 w-16"
+                        sizes="64px"
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-mono text-xs font-black uppercase text-steel">{line.product.sku}</p>

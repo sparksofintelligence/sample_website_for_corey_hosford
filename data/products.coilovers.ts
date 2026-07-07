@@ -11,6 +11,7 @@ export const catalog: CatalogConfig = {
   ],
   heroEyebrow: "Freedom Performance",
   heroTitle: "Purpose-built suspension.",
+  heroImage: "/images/hero-coilovers.png",
   catalogHeading: "Coilover Kits",
   catalogIntro: "Twenty focused SKUs for street, drift, track, and support hardware.",
   primaryCta: "Shop all kits",
@@ -37,7 +38,14 @@ const coiloverDetails = (
   { label: "Included hardware", value: hardware },
 ];
 
-export const products: Product[] = [
+const productImageBySeries: Record<Product["series"], string> = {
+  "Street Series": "/images/coilover-street.png",
+  "Drift Series": "/images/coilover-track.png",
+  "Track Series": "/images/coilover-track.png",
+  Accessories: "/images/accessory.png",
+};
+
+const productCatalog: Product[] = [
   {
     sku: "FP-CS-S13",
     name: "Street Series Coilover Kit",
@@ -244,3 +252,8 @@ export const products: Product[] = [
     detailSpecs: coiloverDetails("Not included", "Service restores adjuster feel", "Not applicable", "Seal and collar service", "Seal pack, collars, spanner set"),
   },
 ];
+
+export const products: Product[] = productCatalog.map((product) => ({
+  ...product,
+  image: productImageBySeries[product.series],
+}));

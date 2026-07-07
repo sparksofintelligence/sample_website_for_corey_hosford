@@ -11,6 +11,7 @@ export const catalog: CatalogConfig = {
   ],
   heroEyebrow: "Freedom Performance",
   heroTitle: "Purpose-built braking.",
+  heroImage: "/images/hero-brakes.png",
   catalogHeading: "Brake Kits",
   catalogIntro: "Twelve focused SKUs for street, drift, track, and supporting hardware.",
   primaryCta: "Shop brake kits",
@@ -37,7 +38,9 @@ const brakeDetails = (
   { label: "Wheel clearance", value: clearance },
 ];
 
-export const products: Product[] = [
+const brakeKitImage = "/images/brake-kit.png";
+
+const productCatalog: Product[] = [
   {
     sku: "FP-BS-S13",
     name: "Street Series Front Brake Kit",
@@ -163,3 +166,8 @@ export const products: Product[] = [
     detailSpecs: brakeDetails("Not included", "Not included", "Braided stainless full car", "Four lines, clips, crush washers", "Factory routing"),
   },
 ];
+
+export const products: Product[] = productCatalog.map((product) => ({
+  ...product,
+  image: brakeKitImage,
+}));
