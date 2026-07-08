@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import type { MouseEvent } from "react";
 import { BrandMark } from "@/components/BrandMark";
 import { BrushSlash } from "@/components/BrushSlash";
 import { CatalogIllustration, LineIcon } from "@/components/TechIllustrations";
@@ -358,6 +359,8 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     const sections = [
       { id: "catalog", label: "Kits" },
       { id: "fitment", label: "Fitment" },
+      { id: "drift", label: "Drift" },
+      { id: "accessories", label: "Accessories" },
       { id: "faq", label: "FAQ" },
     ];
 
@@ -475,6 +478,62 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
     document.getElementById("shop-by-chassis")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const preventFinderFocus = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
+
+  const preserveFinderViewport = (update: () => void) => {
+    const finder = document.getElementById("fitment");
+    const beforeTop = finder?.getBoundingClientRect().top;
+
+    update();
+
+    const restoreFinderTop = () => {
+      const afterTop = finder?.getBoundingClientRect().top;
+
+      if (beforeTop === undefined || afterTop === undefined) {
+        return;
+      }
+
+      const delta = afterTop - beforeTop;
+
+      if (Math.abs(delta) > 1) {
+        const root = document.documentElement;
+        const previousScrollBehavior = root.style.scrollBehavior;
+
+        root.style.scrollBehavior = "auto";
+        window.scrollBy(0, delta);
+        root.style.scrollBehavior = previousScrollBehavior;
+      }
+    };
+
+    window.requestAnimationFrame(() => {
+      restoreFinderTop();
+      window.requestAnimationFrame(restoreFinderTop);
+    });
+    window.setTimeout(restoreFinderTop, 80);
+  };
+
+  const selectFinderChassis = (option: FinderChassisOption, button: HTMLButtonElement) => {
+    button.blur();
+    preserveFinderViewport(() => {
+      selectGarageChassis(option.key);
+      setFinderChassis(option.key);
+      setFinderUse(null);
+      setFinderStep(2);
+    });
+  };
+
+  const selectFinderUse = (use: FinderUse, button: HTMLButtonElement) => {
+    button.blur();
+    preserveFinderViewport(() => {
+      setFinderUse(use);
+      setFinderStep(3);
+    });
+  };
+
+  const hrefForNavLabel = (label: string) => catalog.navLinks.find((link) => link.label === label)?.href ?? "#catalog";
+
   const shopChassis = (option: FinderChassisOption) => {
     selectGarageChassis(option.key);
     setSeries("All");
@@ -507,7 +566,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
   };
 
   return (
-    <main className="min-h-screen bg-asphalt text-white">
+    <main className="min-h-screen bg-asphalt text-white [overflow-anchor:none]">
       <div className="border-b border-red-950/50 bg-ignition px-4 py-2 text-center text-xs font-black uppercase tracking-normal text-white sm:text-sm">
         {brand.announcement}
       </div>
@@ -583,29 +642,34 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
           </div>
         </nav>
 
-        {selectedGarageChassis && (
-          <div className="border-t border-line bg-asphalt/95 px-4 py-2 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
-              <span className="rounded-full border border-ignition bg-ignition px-3 py-1 text-xs font-black uppercase text-white">
-                Your garage: {selectedGarageChassis.label}
-              </span>
-              <button
-                type="button"
-                onClick={scrollToChassisSelector}
-                className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
-              >
-                Change
-              </button>
-              <button
-                type="button"
-                onClick={clearGarageChassis}
-                className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-steel transition hover:border-ignition hover:text-white"
-              >
-                Clear
-              </button>
-            </div>
+        <div className="border-t border-line bg-asphalt/95 px-4 py-2 sm:px-6 lg:px-8">
+          <div
+            aria-hidden={!selectedGarageChassis}
+            className={`mx-auto flex max-w-7xl flex-wrap items-center gap-2 transition-opacity ${
+              selectedGarageChassis ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
+            <span className="rounded-full border border-ignition bg-ignition px-3 py-1 text-xs font-black uppercase text-white">
+              Your garage: {selectedGarageChassis?.label ?? "All chassis"}
+            </span>
+            <button
+              type="button"
+              disabled={!selectedGarageChassis}
+              onClick={scrollToChassisSelector}
+              className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-white transition hover:border-ignition hover:text-ignition disabled:cursor-default"
+            >
+              Change
+            </button>
+            <button
+              type="button"
+              disabled={!selectedGarageChassis}
+              onClick={clearGarageChassis}
+              className="rounded-full border border-line px-3 py-1 text-xs font-black uppercase text-steel transition hover:border-ignition hover:text-white disabled:cursor-default"
+            >
+              Clear
+            </button>
           </div>
-        )}
+        </div>
 
         {mobileOpen && (
           <div className="border-t border-line bg-asphalt px-4 py-3 md:hidden">
@@ -648,7 +712,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         <div
           className={`relative mx-auto max-w-7xl ${
             heroImage
-              ? "grid gap-10 lg:min-h-[620px] lg:grid-cols-[minmax(0,0.68fr)_minmax(280px,0.32fr)] lg:items-center lg:gap-12 xl:min-h-[660px] xl:gap-16"
+              ? "grid gap-10 lg:min-h-[620px] lg:grid-cols-[minmax(0,0.68fr)_minmax(340px,0.32fr)] lg:items-center lg:gap-12 xl:min-h-[660px] xl:gap-16"
               : "grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center"
           }`}
         >
@@ -683,13 +747,13 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
           </div>
 
           {heroImage && (
-            <div className="relative mx-auto flex h-[230px] w-full max-w-[440px] items-center justify-center sm:h-[260px] lg:mr-4 lg:h-[434px] lg:max-h-[70%] lg:max-w-none lg:justify-end xl:mr-8 xl:h-[462px]">
+            <div className="relative mx-auto flex h-[230px] w-full max-w-[440px] items-center justify-center sm:h-[260px] lg:-mr-16 lg:h-[560px] lg:max-h-none lg:w-[min(42vw,560px)] lg:max-w-none lg:justify-end xl:-mr-28 xl:h-[640px] xl:w-[min(44vw,620px)]">
               <Image
                 src={heroImage}
                 alt=""
                 fill
                 priority
-                sizes="(min-width: 1280px) 28vw, (min-width: 1024px) 32vw, (min-width: 640px) 440px, 92vw"
+                sizes="(min-width: 1280px) 44vw, (min-width: 1024px) 42vw, (min-width: 640px) 440px, 92vw"
                 className="object-contain"
               />
             </div>
@@ -721,6 +785,177 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section id="fitment" className="scroll-mt-28 border-b border-line bg-panel-soft px-4 py-16 [overflow-anchor:none] sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+            <div>
+              <SectionHeading title={catalog.fitmentFinderHeading} eyebrow={specialistHeading} accentColor={brand.accentColor} />
+              <p className="mt-5 max-w-xl text-base leading-7 text-steel">
+                {catalog.fitmentFinderIntro}
+              </p>
+
+              <div className="mt-8 grid grid-cols-3 gap-2">
+                {FITMENT_STEP_LABELS.map((label, index) => {
+                  const step = index + 1;
+                  const isActive = finderStep === step;
+                  const isComplete = finderStep > step;
+
+                  return (
+                    <div
+                      key={label}
+                      className={`rounded-[10px] border px-3 py-3 ${
+                        isActive || isComplete ? "border-ignition bg-ignition text-white" : "border-line bg-asphalt text-steel"
+                      }`}
+                    >
+                      <span className="block text-xs font-black uppercase">Step {step}</span>
+                      <span className="mt-1 block text-sm font-black uppercase leading-tight">{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="min-h-[620px] rounded-[14px] border border-line bg-asphalt p-4 shadow-card [overflow-anchor:none] sm:p-6">
+              <div className="flex flex-col justify-between gap-3 border-b border-line pb-5 sm:flex-row sm:items-center">
+                <div>
+                  <p className="text-xs font-black uppercase text-ignition">Guided fitment</p>
+                  <h3 className="mt-1 text-2xl font-black uppercase italic text-white">
+                    {FITMENT_STEP_LABELS[finderStep - 1]}
+                  </h3>
+                </div>
+                {finderStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setFinderStep((step) => Math.max(1, step - 1))}
+                    className="w-fit rounded-full border border-line px-5 py-2 text-sm font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
+                  >
+                    Back
+                  </button>
+                )}
+              </div>
+
+              {finderStep === 1 && (
+                <div className="pt-6 [overflow-anchor:none]">
+                  <div className="space-y-6">
+                    {finderChassisGroups.map((group) => (
+                      <div key={group.make}>
+                        <p className="mb-2 text-xs font-black uppercase tracking-normal text-steel">{group.make}</p>
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          {group.options.map((option) => (
+                            <button
+                              key={option.key}
+                              type="button"
+                              onMouseDown={preventFinderFocus}
+                              onClick={(event) => selectFinderChassis(option, event.currentTarget)}
+                              className={`rounded-[10px] border px-4 py-4 text-left text-lg font-black italic transition ${
+                                finderChassis === option.key
+                                  ? "border-ignition bg-ignition text-white"
+                                  : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {finderStep === 2 && finderChassis && (
+                <div className="pt-6 [overflow-anchor:none]">
+                  <p className="text-sm font-bold leading-6 text-steel">
+                    Chassis selected: <span className="font-black text-white">{selectedFinderChassis?.label ?? finderChassis}</span>
+                  </p>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {FINDER_USES.map((use) => (
+                      <button
+                        key={use}
+                        type="button"
+                        onMouseDown={preventFinderFocus}
+                        onClick={(event) => selectFinderUse(use, event.currentTarget)}
+                        className={`rounded-[10px] border px-4 py-5 text-left text-xl font-black uppercase italic transition ${
+                          finderUse === use
+                            ? "border-ignition bg-ignition text-white"
+                            : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
+                        }`}
+                      >
+                        {use}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {finderStep === 3 && finderChassis && finderUse && (
+                <div className="pt-6 [overflow-anchor:none]">
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                      <p className="text-sm font-bold uppercase text-steel">
+                        {selectedFinderChassis?.label ?? finderChassis} / {finderUse}
+                      </p>
+                      <h4 className="mt-1 text-3xl font-black uppercase italic text-white">
+                        {finderResult.exactMatch || finderUse === "Not sure" ? "Recommended kit" : "Closest options"}
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFinderStep(1)}
+                      className="w-fit rounded-full border border-line px-5 py-2 text-sm font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
+                    >
+                      Start over
+                    </button>
+                  </div>
+
+                  {!finderResult.exactMatch && finderUse !== "Not sure" && (
+                    <p className="mt-4 rounded-[10px] border border-line bg-panel px-4 py-3 text-sm font-bold leading-6 text-steel">
+                      No exact {finderUse.toLowerCase()} match is listed for the {selectedFinderChassis?.label ?? finderChassis}. These are the closest catalog options.
+                    </p>
+                  )}
+
+                  <div className="mt-5 grid gap-5 xl:grid-cols-3">
+                    {finderResult.recommendations.map(({ product, why }) => (
+                      <ProductCard
+                        key={product.sku}
+                        product={product}
+                        catalog={catalog}
+                        accentColor={brand.accentColor}
+                        whyText={why}
+                        onOpen={() => setSelectedProduct(product)}
+                        onAdd={() => addToCart(product)}
+                        notifyState={notifyStateFor(product)}
+                        onNotifyOpen={() => openNotifyForm(product.sku)}
+                        onNotifyEmailChange={(email) => updateNotifyEmail(product.sku, email)}
+                        onNotifySubmit={() => submitNotify(product)}
+                      />
+                    ))}
+
+                    {!finderResult.exactMatch && (
+                      <article className="flex min-h-[560px] flex-col justify-between rounded-[14px] bg-white p-6 text-asphalt shadow-card">
+                        <div>
+                          <p className="text-xs font-black uppercase text-ignition">No exact match</p>
+                          <h4 className="mt-3 text-3xl font-black uppercase italic leading-none">Talk to a specialist</h4>
+                          <p className="mt-5 text-sm font-bold leading-6 text-neutral-700">
+                            We will confirm chassis details, wheel clearance, and intended use before pointing you at the right {catalog.productNoun}.
+                          </p>
+                        </div>
+                        <a
+                          href={`tel:${brand.phone.replace(/-/g, "")}`}
+                          className="mt-8 rounded-full bg-ignition px-5 py-3 text-center text-sm font-black uppercase text-white transition hover:bg-asphalt"
+                        >
+                          {brand.phone}
+                        </a>
+                      </article>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -761,26 +996,6 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-line bg-panel-soft px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
-            <div>
-              <SectionHeading title={catalog.expertiseHeading} eyebrow={catalog.expertiseEyebrow} accentColor={brand.accentColor} />
-              <p className="mt-5 max-w-xl text-base leading-7 text-steel">{catalog.expertiseIntro}</p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-3">
-              {catalog.expertisePoints.map((point) => (
-                <article key={point.title} className="rounded-[14px] bg-white p-6 text-asphalt shadow-card">
-                  <h3 className="text-xl font-black uppercase italic leading-tight">{point.title}</h3>
-                  <p className="mt-4 text-sm font-bold leading-6 text-neutral-700">{point.text}</p>
-                </article>
               ))}
             </div>
           </div>
@@ -899,189 +1114,23 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         </div>
       </section>
 
-      <section id="fitment" className="scroll-mt-28 border-y border-line bg-panel-soft px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <section className="border-b border-line bg-panel-soft px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+          <div className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
             <div>
-              <SectionHeading title={catalog.fitmentFinderHeading} eyebrow={specialistHeading} accentColor={brand.accentColor} />
-              <p className="mt-5 max-w-xl text-base leading-7 text-steel">
-                {catalog.fitmentFinderIntro}
-              </p>
-
-              <div className="mt-8 grid grid-cols-3 gap-2">
-                {FITMENT_STEP_LABELS.map((label, index) => {
-                  const step = index + 1;
-                  const isActive = finderStep === step;
-                  const isComplete = finderStep > step;
-
-                  return (
-                    <div
-                      key={label}
-                      className={`rounded-[10px] border px-3 py-3 ${
-                        isActive || isComplete ? "border-ignition bg-ignition text-white" : "border-line bg-asphalt text-steel"
-                      }`}
-                    >
-                      <span className="block text-xs font-black uppercase">Step {step}</span>
-                      <span className="mt-1 block text-sm font-black uppercase leading-tight">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <SectionHeading title={catalog.expertiseHeading} eyebrow={catalog.expertiseEyebrow} accentColor={brand.accentColor} />
+              <p className="mt-5 max-w-xl text-base leading-7 text-steel">{catalog.expertiseIntro}</p>
             </div>
 
-            <div className="rounded-[14px] border border-line bg-asphalt p-4 shadow-card sm:p-6">
-              <div className="flex flex-col justify-between gap-3 border-b border-line pb-5 sm:flex-row sm:items-center">
-                <div>
-                  <p className="text-xs font-black uppercase text-ignition">Guided fitment</p>
-                  <h3 className="mt-1 text-2xl font-black uppercase italic text-white">
-                    {FITMENT_STEP_LABELS[finderStep - 1]}
-                  </h3>
-                </div>
-                {finderStep > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setFinderStep((step) => Math.max(1, step - 1))}
-                    className="w-fit rounded-full border border-line px-5 py-2 text-sm font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
-                  >
-                    Back
-                  </button>
-                )}
-              </div>
-
-              {finderStep === 1 && (
-                <div className="pt-6">
-                  <div className="space-y-6">
-                    {finderChassisGroups.map((group) => (
-                      <div key={group.make}>
-                        <p className="mb-2 text-xs font-black uppercase tracking-normal text-steel">{group.make}</p>
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                          {group.options.map((option) => (
-                            <button
-                              key={option.key}
-                              type="button"
-                              onClick={() => {
-                                selectGarageChassis(option.key);
-                                setFinderChassis(option.key);
-                                setFinderUse(null);
-                                setFinderStep(2);
-                              }}
-                              className={`rounded-[10px] border px-4 py-4 text-left text-lg font-black italic transition ${
-                                finderChassis === option.key
-                                  ? "border-ignition bg-ignition text-white"
-                                  : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {finderStep === 2 && finderChassis && (
-                <div className="pt-6">
-                  <p className="text-sm font-bold leading-6 text-steel">
-                    Chassis selected: <span className="font-black text-white">{selectedFinderChassis?.label ?? finderChassis}</span>
-                  </p>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {FINDER_USES.map((use) => (
-                      <button
-                        key={use}
-                        type="button"
-                        onClick={() => {
-                          setFinderUse(use);
-                          setFinderStep(3);
-                        }}
-                        className={`rounded-[10px] border px-4 py-5 text-left text-xl font-black uppercase italic transition ${
-                          finderUse === use
-                            ? "border-ignition bg-ignition text-white"
-                            : "border-line bg-panel text-white hover:border-ignition hover:text-ignition"
-                        }`}
-                      >
-                        {use}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {finderStep === 3 && finderChassis && finderUse && (
-                <div className="pt-6">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                    <div>
-                      <p className="text-sm font-bold uppercase text-steel">
-                        {selectedFinderChassis?.label ?? finderChassis} / {finderUse}
-                      </p>
-                      <h4 className="mt-1 text-3xl font-black uppercase italic text-white">
-                        {finderResult.exactMatch || finderUse === "Not sure" ? "Recommended kit" : "Closest options"}
-                      </h4>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setFinderStep(1)}
-                      className="w-fit rounded-full border border-line px-5 py-2 text-sm font-black uppercase text-white transition hover:border-ignition hover:text-ignition"
-                    >
-                      Start over
-                    </button>
-                  </div>
-
-                  {!finderResult.exactMatch && finderUse !== "Not sure" && (
-                    <p className="mt-4 rounded-[10px] border border-line bg-panel px-4 py-3 text-sm font-bold leading-6 text-steel">
-                      No exact {finderUse.toLowerCase()} match is listed for the {selectedFinderChassis?.label ?? finderChassis}. These are the closest catalog options.
-                    </p>
-                  )}
-
-                  <div className="mt-5 grid gap-5 xl:grid-cols-3">
-                    {finderResult.recommendations.map(({ product, why }) => (
-                      <ProductCard
-                        key={product.sku}
-                        product={product}
-                        catalog={catalog}
-                        accentColor={brand.accentColor}
-                        whyText={why}
-                        onOpen={() => setSelectedProduct(product)}
-                        onAdd={() => addToCart(product)}
-                        notifyState={notifyStateFor(product)}
-                        onNotifyOpen={() => openNotifyForm(product.sku)}
-                        onNotifyEmailChange={(email) => updateNotifyEmail(product.sku, email)}
-                        onNotifySubmit={() => submitNotify(product)}
-                      />
-                    ))}
-
-                    {!finderResult.exactMatch && (
-                      <article className="flex min-h-[560px] flex-col justify-between rounded-[14px] bg-white p-6 text-asphalt shadow-card">
-                        <div>
-                          <p className="text-xs font-black uppercase text-ignition">No exact match</p>
-                          <h4 className="mt-3 text-3xl font-black uppercase italic leading-none">Talk to a specialist</h4>
-                          <p className="mt-5 text-sm font-bold leading-6 text-neutral-700">
-                            We will confirm chassis details, wheel clearance, and intended use before pointing you at the right {catalog.productNoun}.
-                          </p>
-                        </div>
-                        <a
-                          href={`tel:${brand.phone.replace(/-/g, "")}`}
-                          className="mt-8 rounded-full bg-ignition px-5 py-3 text-center text-sm font-black uppercase text-white transition hover:bg-asphalt"
-                        >
-                          {brand.phone}
-                        </a>
-                      </article>
-                    )}
-                  </div>
-                </div>
-              )}
+            <div className="grid gap-5 md:grid-cols-3">
+              {catalog.expertisePoints.map((point) => (
+                <article key={point.title} className="rounded-[14px] bg-white p-6 text-asphalt shadow-card">
+                  <h3 className="text-xl font-black uppercase italic leading-tight">{point.title}</h3>
+                  <p className="mt-4 text-sm font-bold leading-6 text-neutral-700">{point.text}</p>
+                </article>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="border-b border-line px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-          <div className="max-w-lg">
-            <SectionHeading title={catalog.builtToOrderHeading} eyebrow="Built to order" accentColor={brand.accentColor} />
-          </div>
-          <p className="text-base leading-8 text-steel">{catalog.builtToOrderText}</p>
         </div>
       </section>
 
@@ -1111,7 +1160,18 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-5 pb-5 text-sm leading-7 text-neutral-700">{item.answer}</p>
+                      <div className="px-5 pb-5">
+                        <p className="text-sm leading-7 text-neutral-700">{item.answer}</p>
+                        {item.action && (
+                          <button
+                            type="button"
+                            onClick={() => handleNavClick("Fitment", item.action.href)}
+                            className="mt-4 rounded-full bg-ignition px-5 py-3 text-sm font-black uppercase text-white transition hover:bg-asphalt"
+                          >
+                            {item.action.label}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1139,7 +1199,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
                 <button
                   key={link}
                   type="button"
-                  onClick={() => handleNavClick(link, link === "FAQ" ? "#faq" : link === "Fitment" ? "#fitment" : "#catalog")}
+                  onClick={() => handleNavClick(link, hrefForNavLabel(link))}
                   className="w-fit text-sm font-bold text-steel transition hover:text-ignition"
                 >
                   {link}

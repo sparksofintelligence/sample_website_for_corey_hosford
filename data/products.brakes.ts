@@ -4,9 +4,9 @@ export const catalog: CatalogConfig = {
   categoryLabel: "Brake Kits",
   navLinks: [
     { label: "Kits", href: "#catalog" },
+    { label: "Fitment", href: "#fitment" },
     { label: "Drift", href: "#drift" },
     { label: "Accessories", href: "#accessories" },
-    { label: "Fitment", href: "#fitment" },
     { label: "FAQ", href: "#faq" },
   ],
   heroEyebrow: "Freedom Performance",

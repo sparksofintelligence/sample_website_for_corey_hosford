@@ -54,6 +54,10 @@ export const brand: BrandConfig = {
       question: "Can you confirm fitment before I order?",
       answer:
         "Yes. Send the chassis, wheel size, tire size, and intended ride height. We check notes before the order is released.",
+      action: {
+        label: "Check my fitment",
+        href: "#fitment",
+      },
     },
     {
       question: "How do I choose spring rates?",
@@ -71,10 +75,10 @@ export const brand: BrandConfig = {
         "Demo warranty terms cover manufacturing defects for street use. Crash damage, improper installation, and racing wear are not included.",
     },
     {
-      question: "How long does built-to-order take?",
+      question: "What does Built to Order mean?",
       answer:
-        "Built-to-order parts show their lead time on the product card. Most listed builds are scheduled for 3-5 weeks before shipping.",
+        "Popular chassis are kept in stock when possible. Some kits are assembled to order, and the product card shows a clear lead time before checkout.",
     },
   ],
-  footerLinks: ["Kits", "Drift", "Accessories", "Fitment", "FAQ"],
+  footerLinks: ["Kits", "Fitment", "Drift", "Accessories", "FAQ"],
 };

@@ -60,6 +60,10 @@ export type BrandConfig = {
   faq: {
     question: string;
     answer: string;
+    action?: {
+      label: string;
+      href: string;
+    };
   }[];
   footerLinks: string[];
 };
