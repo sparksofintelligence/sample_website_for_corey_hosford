@@ -16,7 +16,7 @@ export function BrandMark({ className = "", compact = false, logoImage }: BrandM
           src={logoImage}
           alt="Freedom Performance"
           fill
-          sizes={compact ? "68px" : "150px"}
+          sizes={compact ? "(min-width: 1024px) 84px, 64px" : "150px"}
           className="object-contain"
         />
       </span>

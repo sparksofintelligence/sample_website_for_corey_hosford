@@ -513,7 +513,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
       </div>
 
       <header className="sticky top-0 z-40 border-b border-line bg-asphalt/95 backdrop-blur">
-        <nav className="mx-auto flex min-h-[92px] max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <nav className="mx-auto flex min-h-[88px] max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:min-h-[112px] lg:px-8 lg:py-[14px]">
           <a
             href="#hero"
             className="shrink-0"
@@ -526,7 +526,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
             <BrandMark
               compact
               logoImage={brand.logoImage}
-              className={brand.logoImage ? "h-[68px] w-[68px]" : "h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]"}
+              className={brand.logoImage ? "h-[64px] w-[64px] lg:h-[84px] lg:w-[84px]" : "h-[46px] w-[150px] sm:h-[54px] sm:w-[180px]"}
             />
           </a>
 
@@ -635,23 +635,7 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         id="hero"
         className="relative isolate overflow-hidden border-b border-line bg-asphalt px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        {heroImage ? (
-          <>
-            <div className="hero-art-fade absolute right-6 top-1/2 aspect-[16/9] w-[82%] -translate-y-1/2 sm:right-10 sm:w-[72%] lg:right-14 lg:w-[58%] xl:right-[max(4rem,calc((100vw-1280px)/2+2rem))] xl:w-[52%]">
-              <div className="absolute inset-0 bg-asphalt" />
-              <Image
-                src={heroImage}
-                alt=""
-                fill
-                priority
-                sizes="(min-width: 1280px) 52vw, (min-width: 1024px) 58vw, (min-width: 640px) 72vw, 82vw"
-                className="object-contain object-right"
-              />
-            </div>
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#0E0E0E_0%,rgba(14,14,14,0.99)_34%,rgba(14,14,14,0.78)_58%,rgba(14,14,14,0.08)_100%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(14,14,14,0.42)_0%,rgba(14,14,14,0)_44%,rgba(14,14,14,0.28)_100%)]" />
-          </>
-        ) : (
+        {!heroImage && (
           <>
             <div className="absolute inset-0 blueprint-grid opacity-40" />
             <CatalogIllustration
@@ -663,12 +647,14 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
         )}
         <div
           className={`relative mx-auto max-w-7xl ${
-            heroImage ? "min-h-[620px] py-6 sm:min-h-[660px] lg:flex lg:items-center" : "grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center"
+            heroImage
+              ? "grid gap-10 lg:min-h-[620px] lg:grid-cols-[minmax(0,0.68fr)_minmax(280px,0.32fr)] lg:items-center lg:gap-12 xl:min-h-[660px] xl:gap-16"
+              : "grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center"
           }`}
         >
-          <div className={heroImage ? "max-w-4xl" : ""}>
+          <div className={heroImage ? "relative z-10 max-w-4xl" : ""}>
             <p className="mb-5 text-sm font-black uppercase tracking-normal text-ignition sm:text-base">{catalog.heroEyebrow}</p>
-            <h1 className="motorsport-heading max-w-5xl text-[3.7rem] text-white sm:text-[7.4rem] lg:text-[9.7rem]">
+            <h1 className="motorsport-heading max-w-5xl text-[3.7rem] text-white sm:text-[7.4rem] lg:text-[7.8rem] xl:text-[8.4rem]">
               {catalog.heroTitle}
             </h1>
             <BrushSlash className="mt-2 h-9 w-full max-w-xl" color={brand.accentColor} />
@@ -695,6 +681,19 @@ export function Storefront({ brand, catalog, products }: StorefrontProps) {
               </button>
             </div>
           </div>
+
+          {heroImage && (
+            <div className="relative mx-auto flex h-[230px] w-full max-w-[440px] items-center justify-center sm:h-[260px] lg:mr-4 lg:h-[434px] lg:max-h-[70%] lg:max-w-none lg:justify-end xl:mr-8 xl:h-[462px]">
+              <Image
+                src={heroImage}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1280px) 28vw, (min-width: 1024px) 32vw, (min-width: 640px) 440px, 92vw"
+                className="object-contain"
+              />
+            </div>
+          )}
 
           {!heroImage && (
             <div className="relative mx-auto flex aspect-[4/5] w-full max-w-[460px] items-center justify-center overflow-hidden rounded-[14px] border border-line bg-panel shadow-card">
